@@ -14,6 +14,18 @@
  */
 package org.pitest.mutationtest.tooling;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.pitest.classinfo.ClassByteArraySource;
 import org.pitest.classinfo.ClassInfo;
 import org.pitest.classinfo.ClassName;
@@ -53,18 +65,6 @@ import org.pitest.mutationtest.statistics.Score;
 import org.pitest.util.Log;
 import org.pitest.util.StringUtil;
 import org.pitest.util.Timings;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MutationCoverage {
 
@@ -159,6 +159,24 @@ public class MutationCoverage {
     return new CombinedStatistics(stats.getStatistics(),
         coverageData.createSummary());
 
+  }
+
+  public void signalAfterTheWholeBuild() {
+    final EngineArguments args = EngineArguments.arguments()
+        .withExcludedMethods(this.data.getExcludedMethods())
+        .withMutators(this.data.getMutators());
+
+    final MutationEngine engine = this.strategies.factory().createEngine(args);
+
+    final ListenerArguments lisArgs = new ListenerArguments(
+        sourceFile -> null, null, new SmartSourceLocator(
+        this.data.getSourceDirs()), engine, System.currentTimeMillis(),
+        this.data.isFullMutationMatrix(), data);
+
+    final MutationResultListener mutationReportListener = this.strategies
+        .listenerFactory().getListener(this.data.getFreeFormProperties(), lisArgs);
+
+    mutationReportListener.runAfterWholeBuild();
   }
 
   private void checkExcludedRunners() {

@@ -1,11 +1,5 @@
 package org.pitest.maven;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +26,12 @@ import org.mockito.Mock;
 import org.pitest.mutationtest.config.PluginServices;
 import org.pitest.mutationtest.config.ReportOptions;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 public class ScmMojoTest extends BasePitMojoTest {
 
   private ScmMojo       testee;
@@ -54,9 +54,11 @@ public class ScmMojoTest extends BasePitMojoTest {
     this.testee = new ScmMojo(this.executionStrategy, this.manager,
         this.filter, this.plugins, false,  i -> true);
     this.testee.setScmRootDir(new File("foo"));
+    this.testee.setMavenSession(session);
     when(this.project.getBuild()).thenReturn(this.build);
     when(this.project.getParent()).thenReturn(null);
     when(this.project.getBasedir()).thenReturn(new File("."));
+    when(this.project.getArtifactId()).thenReturn("pitest");
     when(this.build.getSourceDirectory()).thenReturn("foo");
     when(this.build.getOutputDirectory()).thenReturn("foo");
     when(this.build.getTestOutputDirectory()).thenReturn("foo");

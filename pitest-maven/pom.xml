@@ -74,6 +74,11 @@
 			<artifactId>pitest-html-report</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.pitest</groupId>
+			<artifactId>pitest-github-report</artifactId>
+			<version>${project.version}</version>
+		</dependency>
         <dependency>
             <groupId>org.pitest</groupId>
             <artifactId>pitest-aggregator</artifactId>

@@ -2,6 +2,7 @@ package org.pitest.maven;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +12,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -22,9 +25,12 @@ import org.pitest.mutationtest.config.PluginServices;
 import org.pitest.mutationtest.config.ReportOptions;
 import org.pitest.mutationtest.statistics.MutationStatistics;
 import org.pitest.mutationtest.tooling.CombinedStatistics;
+import org.pitest.mutationtest.tooling.EntryPoint;
 import org.pitest.plugin.ClientClasspathPlugin;
 import org.pitest.plugin.ToolClasspathPlugin;
+import org.pitest.util.StringUtil;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class AbstractPitMojo extends AbstractMojo {
@@ -36,7 +42,9 @@ public class AbstractPitMojo extends AbstractMojo {
   private final PluginServices        plugins;
 
   // Concrete List types declared for all fields to work around maven 2 bug
-  
+
+  @Parameter(defaultValue = "${session}", required = true, readonly = true)
+  private MavenSession session;
   /**
    * Test plugin to use
    */
@@ -49,11 +57,17 @@ public class AbstractPitMojo extends AbstractMojo {
   @Parameter(property = "targetClasses")
   private ArrayList<String>           targetClasses;
 
+  @Parameter(property = "targetClassesCommaSep")
+  private String                      targetClassesCommaSep;
+
   /**
    * Tests to run
    */
   @Parameter(property = "targetTests")
   private ArrayList<String>           targetTests;
+
+  @Parameter(property = "targetTestsCommaSep")
+  private String                      targetTestsCommaSep;
 
   /**
    * Methods not to mutate
@@ -109,7 +123,25 @@ public class AbstractPitMojo extends AbstractMojo {
    * 
    */
   @Parameter(defaultValue = "false", property = "withHistory")
-  private boolean                     withHistory;  
+  private boolean                     withHistory;
+
+  /**
+   * Teamcity buildId
+   */
+  @Parameter(property = "buildId")
+  private String                     buildId;
+
+  /**
+   * Teamcity buildTypeId
+   */
+  @Parameter(property = "buildTypeId")
+  private String                     buildTypeId;
+
+  /**
+   * Teamcity hostname
+   */
+  @Parameter(property = "hostname")
+  private String                     hostname;
 
   /**
    * Maximum distance to look from test to class. Relevant when mutating static
@@ -374,6 +406,24 @@ public class AbstractPitMojo extends AbstractMojo {
 
   private final GoalStrategy          goalStrategy;
 
+  @Parameter(property = "githubToken")
+  private String githubToken;
+
+  @Parameter(property = "githubRepo")
+  private String githubRepo;
+
+  @Parameter(property = "githubUrl", defaultValue = "api.github.com")
+  private String githubUrl;
+
+  @Parameter(property = "githubPrNumber")
+  private int githubPrNumber;
+
+  @Parameter(property = "prArtifactsPath")
+  private String prArtifactsPath;
+
+  @Parameter(property = "projectRootName")
+  private String projectRootName;
+
   public AbstractPitMojo() {
     this(new RunPitStrategy(), new DependencyFilter(new PluginServices(
         AbstractPitMojo.class.getClassLoader())), new PluginServices(
@@ -421,6 +471,35 @@ public class AbstractPitMojo extends AbstractMojo {
         this.getLog().info("  - " + reason);
       }
     }
+
+    if (isLastProjectInReactor()) {
+      this.getLog().info("Signal listeners after the whole project");
+      signalLastProjectInBuild();
+    }
+
+  }
+
+  public void setMavenSession(MavenSession session) {
+    this.session = session;
+  }
+
+  public String getPrArtifactsPath() {
+    return prArtifactsPath;
+  }
+
+  public void setPrArtifactsPath(String prArtifactsPath) {
+    this.prArtifactsPath = prArtifactsPath;
+  }
+
+  private void signalLastProjectInBuild() {
+    final ReportOptions data = new MojoToReportOptionsConverter(this,
+        new SurefireConfigConverter(), this.filter).convert();
+    EntryPoint e = new EntryPoint();
+    e.signalAfterTheWholeBuild(detectBaseDir(), data, plugins);
+  }
+
+  public String getGithubToken() {
+    return githubToken;
   }
 
   private void switchLogging() {
@@ -504,6 +583,9 @@ public class AbstractPitMojo extends AbstractMojo {
   }
 
   public List<String> getTargetClasses() {
+    if ((targetClasses == null || targetClasses.isEmpty()) && !StringUtil.isNullOrEmpty(targetClassesCommaSep)) {
+      return Arrays.stream(targetClassesCommaSep.split(",")).collect(Collectors.toList());
+    }
     return withoutNulls(this.targetClasses);
   }
 
@@ -511,12 +593,23 @@ public class AbstractPitMojo extends AbstractMojo {
     this.targetClasses = targetClasses;
   }
 
+  public void setTargetClassesCommaSep(String targetClasses) {
+    this.targetClassesCommaSep = targetClasses;
+  }
+
   public List<String> getTargetTests() {
+    if ((targetTests == null || targetTests.isEmpty()) && !StringUtil.isNullOrEmpty(targetTestsCommaSep)) {
+      return Arrays.stream(targetTestsCommaSep.split(",")).collect(Collectors.toList());
+    }
     return withoutNulls(this.targetTests);
   }
 
   public void setTargetTests(ArrayList<String> targetTests) {
     this.targetTests = targetTests;
+  }
+
+  public void setTargetTestsCommaSep(String targetTests) {
+    this.targetTestsCommaSep = targetTests;
   }
 
   public List<String> getExcludedMethods() {
@@ -743,4 +836,51 @@ public class AbstractPitMojo extends AbstractMojo {
         .collect(Collectors.toCollection(ArrayList::new));
   }
 
+  public String getBuildId() {
+    return buildId;
+  }
+
+  public String getBuildTypeId() {
+    return buildTypeId;
+  }
+
+  public String getHostname() {
+    return hostname;
+  }
+
+  /**
+   * Is this project the last project in the reactor?
+   *
+   * @return true if last project (including only project)
+   */
+  public boolean isLastProjectInReactor() {
+    List<MavenProject> sortedProjects = session.getSortedProjects();
+
+    MavenProject lastProject = sortedProjects.isEmpty()
+        ? session.getCurrentProject()
+        : sortedProjects.get(sortedProjects.size() - 1);
+
+    if (getLog().isDebugEnabled()) {
+      getLog().debug("Current project: '" + session.getCurrentProject().getName()
+          + "', Last project to execute based on dependency graph: '" + lastProject.getName() + "'");
+    }
+
+    return session.getCurrentProject().equals(lastProject);
+  }
+
+  public String getGithubRepo() {
+    return githubRepo;
+  }
+
+  public String getGithubUrl() {
+    return githubUrl;
+  }
+
+  public int getGithubPrNumber() {
+    return githubPrNumber;
+  }
+
+  public String getProjectRootName() {
+    return projectRootName;
+  }
 }

@@ -48,4 +48,10 @@ public class CompoundTestListener implements MutationResultListener {
 
   }
 
+  @Override
+  public void runAfterWholeBuild() {
+    for (final MutationResultListener each : this.children) {
+      each.runAfterWholeBuild();
+    }
+  }
 }

@@ -14,6 +14,7 @@
  */
 package org.pitest.maven;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -26,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
@@ -56,15 +58,23 @@ public abstract class BasePitMojoTest extends AbstractMojoTestCase {
   @Mock
   protected PluginServices      plugins;
 
+  @Mock
+  protected MavenSession session;
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     MockitoAnnotations.initMocks(this);
+    MavenProject anotherProject = mock(MavenProject.class);
+    when(this.session.getSortedProjects()).thenReturn(java.util.Collections.singletonList(anotherProject));
+    when(this.session.getCurrentProject()).thenReturn(this.project);
     this.classPath = new ArrayList<>(FCollection.map(
         ClassPath.getClassPathElementsAsFiles(), fileToString()));
     when(this.project.getTestClasspathElements()).thenReturn(this.classPath);
     when(this.project.getPackaging()).thenReturn("jar");
-    
+    when(this.project.getArtifactId()).thenReturn("pitest");
+    when(this.project.getBasedir()).thenReturn(new File("."));
+
     final Build build = new Build();
     build.setOutputDirectory("");
     
@@ -125,6 +135,8 @@ public abstract class BasePitMojoTest extends AbstractMojoTestCase {
     setVariableValueToObject(pitMojo, "pluginArtifactMap", pluginArtifacts);
 
     setVariableValueToObject(pitMojo, "project", this.project);
+
+    setVariableValueToObject(pitMojo, "session", this.session);
 
     if (pitMojo.getAdditionalClasspathElements() == null) {
       ArrayList<String> elements = new ArrayList<>();

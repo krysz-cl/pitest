@@ -141,6 +141,16 @@ public class ReportOptions {
   
   private boolean                        useClasspathJar;
 
+  private String hostname;
+  private String buildId;
+  private String buildTypeId;
+  private String currentDirectory;
+  private boolean lastProjectInReactor;
+  private String githubUrl;
+  private String githubToken;
+  private String githubRepo;
+  private int prNumber;
+  private String prArtifactsPath;
 
   public boolean isVerbose() {
     return this.verbose;
@@ -238,6 +248,86 @@ public class ReportOptions {
     } else {
       return new ClassPath();
     }
+  }
+
+  public String getHostname() {
+    return hostname;
+  }
+
+  public void setHostname(String hostname) {
+    this.hostname = hostname;
+  }
+
+  public String getBuildId() {
+    return buildId;
+  }
+
+  public void setBuildId(String buildId) {
+    this.buildId = buildId;
+  }
+
+  public String getBuildTypeId() {
+    return buildTypeId;
+  }
+
+  public void setBuildTypeId(String buildTypeId) {
+    this.buildTypeId = buildTypeId;
+  }
+
+  public void setCurrentDirectory(String currentDirectory) {
+    this.currentDirectory = currentDirectory;
+  }
+
+  public String getCurrentDirectory() {
+    return currentDirectory;
+  }
+
+  public void setLastProjectInReactor(boolean lastProjectInReactor) {
+    this.lastProjectInReactor = lastProjectInReactor;
+  }
+
+  public boolean isLastProjectInReactor() {
+    return lastProjectInReactor;
+  }
+
+  public String getGithubUrl() {
+    return githubUrl;
+  }
+
+  public void setGithubUrl(String githubUrl) {
+    this.githubUrl = githubUrl;
+  }
+
+  public String getGithubToken() {
+    return githubToken;
+  }
+
+  public void setGithubToken(String githubToken) {
+    this.githubToken = githubToken;
+  }
+
+  public String getGithubRepo() {
+    return githubRepo;
+  }
+
+  public void setGithubRepo(String githubRepo) {
+    this.githubRepo = githubRepo;
+  }
+
+  public int getPrNumber() {
+    return prNumber;
+  }
+
+  public void setPrNumber(int prNumber) {
+    this.prNumber = prNumber;
+  }
+
+  public String getPrArtifactsPath() {
+    return prArtifactsPath;
+  }
+
+  public void setPrArtifactsPath(String prArtifactsPath) {
+    this.prArtifactsPath = prArtifactsPath;
   }
 
   private ClassPath createClassPathFromElements() {
@@ -406,7 +496,7 @@ public class ReportOptions {
 
   private Predicate<ClassPathRoot> createCodePathFilter() {
     if ((this.codePaths != null) && !this.codePaths.isEmpty()) {
-      return new PathNamePredicate(Prelude.or(Glob
+      return new PathNamePredicate(or(Glob
           .toGlobPredicates(this.codePaths)));
     } else {
       return new DefaultCodePathPredicate();

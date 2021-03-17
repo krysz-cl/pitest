@@ -79,6 +79,16 @@ public class MojoToReportOptionsConverterTest extends BasePitMojoTest {
     assertFalse(actualPredicate.test("notfoobar"));
   }
 
+  public void testCreatesPredicateFromListOfTargetClassGlobsCommaSep() {
+    final String xml = "<targetClassesCommaSep>foo*,bar*</targetClassesCommaSep>";
+
+    final ReportOptions actual = parseConfig(xml);
+    final Predicate<String> actualPredicate = actual.getTargetClassesFilter();
+    assertTrue(actualPredicate.test("foo_anything"));
+    assertTrue(actualPredicate.test("bar_anything"));
+    assertFalse(actualPredicate.test("notfoobar"));
+  }
+
   public void testUsesSourceDirectoriesFromProject() {
     when(this.project.getCompileSourceRoots()).thenReturn(Arrays.asList("src"));
     when(this.project.getTestCompileSourceRoots()).thenReturn(
@@ -153,6 +163,15 @@ public class MojoToReportOptionsConverterTest extends BasePitMojoTest {
         "                      <param>foo*</param>" + //
         "                      <param>bar*</param>" + //
         "                  </targetTests>";
+    final ReportOptions actual = parseConfig(xml);
+    final Predicate<String> actualPredicate = actual.getTargetTestsFilter();
+    assertTrue(actualPredicate.test("foo_anything"));
+    assertTrue(actualPredicate.test("bar_anything"));
+    assertFalse(actualPredicate.test("notfoobar"));
+  }
+
+  public void testParsesListOfTargetTestClassGlobsCommaSep() {
+    final String xml = "<targetTestsCommaSep>foo*,bar*</targetTestsCommaSep>";
     final ReportOptions actual = parseConfig(xml);
     final Predicate<String> actualPredicate = actual.getTargetTestsFilter();
     assertTrue(actualPredicate.test("foo_anything"));

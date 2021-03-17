@@ -1,0 +1,2 @@
+org.pitest.mutationtest.report.github.GitHubReportFactory
+org.pitest.mutationtest.report.github.reporter.GitHubPullRequestFactory

@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -32,9 +34,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.pitest.classinfo.ClassName;
 import org.pitest.classpath.DirectoryClassPathRoot;
-import java.util.function.Function;
 import org.pitest.functional.FCollection;
-import java.util.function.Predicate;
 import org.pitest.mutationtest.config.ReportOptions;
 import org.pitest.testapi.TestGroupConfig;
 import org.pitest.util.Glob;
@@ -45,6 +45,7 @@ public class MojoToReportOptionsConverter {
   private final Predicate<Artifact>     dependencyFilter;
   private final Log                     log;
   private final SurefireConfigConverter surefireConverter;
+  private final TeamcityParamsConverter tcParamConverter;
 
   public MojoToReportOptionsConverter(final AbstractPitMojo mojo,
       SurefireConfigConverter surefireConverter,
@@ -53,6 +54,7 @@ public class MojoToReportOptionsConverter {
     this.dependencyFilter = dependencyFilter;
     this.log = mojo.getLog();
     this.surefireConverter = surefireConverter;
+    this.tcParamConverter = new TeamcityParamsConverter();
   }
 
   public ReportOptions convert() {
@@ -111,6 +113,7 @@ public class MojoToReportOptionsConverter {
     data.setExcludedRunners(this.mojo.getExcludedRunners());
 
     data.setReportDir(this.mojo.getReportsDirectory().getAbsolutePath());
+    data.setCurrentDirectory(tcParamConverter.computeCurrentDirPath(mojo));
     data.setVerbose(this.mojo.isVerbose());
     if (this.mojo.getJvmArgs() != null) {
       data.addChildJVMArgs(this.mojo.getJvmArgs());
@@ -150,9 +153,21 @@ public class MojoToReportOptionsConverter {
 
     data.setSkipFailingTests(this.mojo.skipFailingTests());
 
+    data.setBuildId(this.mojo.getBuildId());
+    data.setBuildTypeId(this.mojo.getBuildTypeId());
+    data.setHostname(this.mojo.getHostname());
+
+    data.setLastProjectInReactor(this.mojo.isLastProjectInReactor());
+
+    data.setGithubToken(this.mojo.getGithubToken());
+    data.setGithubRepo(this.mojo.getGithubRepo());
+    data.setGithubUrl(this.mojo.getGithubUrl());
+    data.setPrNumber(this.mojo.getGithubPrNumber());
+
+    data.setPrArtifactsPath(this.mojo.getPrArtifactsPath());
+
     return data;
   }
-
 
   private void determineHistory(final ReportOptions data) {
     if (this.mojo.useHistory()) {

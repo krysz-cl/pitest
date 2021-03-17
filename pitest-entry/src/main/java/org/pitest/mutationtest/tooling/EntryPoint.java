@@ -1,5 +1,12 @@
 package org.pitest.mutationtest.tooling;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import org.pitest.classpath.ClassPath;
 import org.pitest.classpath.ClassPathByteArraySource;
 import org.pitest.classpath.CodeSource;
@@ -22,13 +29,6 @@ import org.pitest.util.Log;
 import org.pitest.util.PitError;
 import org.pitest.util.ResultOutputStrategy;
 import org.pitest.util.Timings;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
 
 public class EntryPoint {
 
@@ -127,6 +127,19 @@ public class EntryPoint {
       historyWriter.close();
     }
 
+  }
+
+  public void signalAfterTheWholeBuild(File baseDir, ReportOptions data, PluginServices plugins) {
+    final SettingsFactory settings = new SettingsFactory(data, plugins);
+    final MutationResultListenerFactory reportFactory = settings
+        .createListener();
+    final MutationStrategies strategies = new MutationStrategies(
+        settings.createEngine(), null, null, reportFactory,
+        null);
+
+    final MutationCoverage report = new MutationCoverage(strategies, baseDir,
+        null, data, settings, null);
+    report.signalAfterTheWholeBuild();
   }
 
   private void checkMatrixMode(ReportOptions data) {

@@ -8,4 +8,8 @@ public interface MutationResultListener {
 
   void runEnd();
 
+  default void runAfterWholeBuild() {
+   //do nothing
+  }
+
 }
